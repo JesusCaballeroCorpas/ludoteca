@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import MatchesList from "./MatchesList";
 import MatchForm from "./MatchForm";
 import {
@@ -19,13 +19,14 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [confirmingGame, setConfirmingGame] = useState(false);
 
   // Cargar partidas del juego
-  useEffect(() => {
-    async function loadMatches() {
-      const data = await getMatchesByGame(game.id, game.userId);
-      setMatches(data);
-    }
-    loadMatches();
+  const loadMatches = useCallback(async () => {
+    const data = await getMatchesByGame(game.id, game.userId);
+    setMatches(data);
   }, [game.id, game.userId]);
+
+  useEffect(() => {
+    loadMatches();
+  }, [loadMatches]);
 
   // Guardar nueva partida o editar existente
   async function saveMatch(match) {
@@ -36,32 +37,29 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
       await addMatch(match, game.id, game.userId);
     }
     setView("detail");
-    const data = await getMatchesByGame(game.id, game.userId);
-    setMatches(data);
+    loadMatches();
   }
 
   // Eliminar partida
   async function deleteMatchConfirmed() {
-    if (confirmingMatchId) {
-      await deleteMatch(confirmingMatchId);
-      setConfirmingMatchId(null);
-      const data = await getMatchesByGame(game.id, game.userId);
-      setMatches(data);
-    }
+    if (!confirmingMatchId) return;
+    await deleteMatch(confirmingMatchId);
+    setConfirmingMatchId(null);
+    loadMatches();
   }
 
-  // Modal para crear o editar partida
+  // Vista formulario crear / editar partida
   if (view === "create-match" || editingMatch) {
     return (
       <MatchForm
         gameId={game.id}
         userId={game.userId}
+        initialMatch={editingMatch}
         onSave={saveMatch}
         onCancel={() => {
-          setView("detail");
           setEditingMatch(null);
+          setView("detail");
         }}
-        initialData={editingMatch}
       />
     );
   }
@@ -98,9 +96,13 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
       </button>
 
       <h2 className="text-xl font-semibold mb-3">🏁 Partidas</h2>
+
       <MatchesList
         matches={matches}
-        onEdit={(match) => setEditingMatch(match)}
+        onEdit={(match) => {
+          setEditingMatch(match);
+          setView("edit-match");
+        }}
         onDelete={(matchId) => setConfirmingMatchId(matchId)}
       />
 
@@ -110,7 +112,10 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         <button className="border px-4 py-2 rounded" onClick={onBack}>
           Volver
         </button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={onEdit}>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={onEdit}
+        >
           Editar
         </button>
         <button
@@ -121,7 +126,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </button>
       </div>
 
-      {/* Modal de confirmación para partida */}
+      {/* Modal confirmar eliminación partida */}
       {confirmingMatchId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
@@ -145,7 +150,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </div>
       )}
 
-      {/* Modal de confirmación para juego */}
+      {/* Modal confirmar eliminación juego */}
       {confirmingGame && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
