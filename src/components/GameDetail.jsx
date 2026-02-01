@@ -1,10 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getMatchesByGame } from "../services/matchesService";
+import MatchesList from "./MatchesList";
+import MatchForm from "./MatchForm";
+import { addMatch } from "../services/matchesService";
 
 /* =====================
    GameDetail
 ===================== */
 export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [confirming, setConfirming] = useState(false);
+  const [matches, setMatches] = useState([]);
+  const [view, setView] = useState("detail");
+
+  
+  useEffect(() => {
+    async function loadMatches() {
+      const data = await getMatchesByGame(game.id, game.userId);
+      setMatches(data);
+    }
+
+    loadMatches();
+  }, [game.id, game.userId]);
+
+  async function saveMatch(match) {
+    await addMatch(match, game.id, game.userId);
+    setView("detail");
+    const data = await getMatchesByGame(game.id, game.userId); // recarga partidas
+    setMatches(data);
+  }
+
+  if (view === "create-match") {
+    return (
+      <MatchForm
+        gameId={game.id}
+        userId={game.userId}
+        onSave={saveMatch}
+        onCancel={() => setView("detail")}
+      />
+    );
+  }
 
   return (
     <div className="p-4 max-w-3xl mx-auto">
@@ -21,7 +55,18 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
       </div>
       <p className="text-sm mb-2">Editorial: {game.publisher}</p>
       <p className="mb-6 whitespace-pre-wrap">{game.comments}</p>
-
+      <hr className="my-6" />
+      <button
+        className="bg-green-600 text-white px-3 py-2 rounded mb-4"
+        onClick={() => setView("create-match")}
+      >
+        ➕ Añadir partida
+      </button>
+      <h2 className="text-xl font-semibold mb-3">
+        🏁 Partidas
+      </h2>
+      <MatchesList matches={matches} />
+      <hr className="my-6" />
       <div className="flex gap-2">
         <button className="border px-4 py-2 rounded" onClick={onBack}>Volver</button>
         <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={onEdit}>Editar</button>
