@@ -1,9 +1,9 @@
 import {
   collection,
   addDoc,
-  getDocs,
   query,
   where,
+  getDocs,
   Timestamp,
   doc,
   updateDoc,
@@ -13,7 +13,6 @@ import { db } from "../firebase";
 
 const matchesCollection = collection(db, "matches");
 
-// Obtener partidas de un juego de un usuario
 export async function getMatchesByGame(gameId, userId) {
   const q = query(
     matchesCollection,
@@ -22,39 +21,51 @@ export async function getMatchesByGame(gameId, userId) {
   );
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => {
-    const data = doc.data();
+
+  return snapshot.docs.map(d => {
+    const data = d.data();
+
     return {
-      id: doc.id,
+      id: d.id,
       ...data,
-      // Convertimos Timestamp a Date para mostrar correctamente
-      date: data.date ? data.date.toDate() : null,
+      date: data.date?.toDate
+        ? data.date.toDate()     // Timestamp → Date
+        : data.date
+        ? new Date(data.date)    // string → Date
+        : null,
     };
   });
 }
 
-// Añadir una partida
+/* =========================
+   CREAR PARTIDA
+========================= */
 export async function addMatch(match, gameId, userId) {
+  const { id, ...matchData } = match; // ⬅️ CLAVE
+
   await addDoc(matchesCollection, {
-    ...match,
+    ...matchData,
     gameId,
     userId,
-    // Guardamos la fecha como Timestamp
-    date: match.date ? Timestamp.fromDate(new Date(match.date)) : Timestamp.now(),
     createdAt: Timestamp.now(),
   });
 }
 
-// Actualizar una partida (opcional, si luego añades edición)
+/* =========================
+   EDITAR PARTIDA
+========================= */
 export async function updateMatch(matchId, match) {
+  const { id, ...matchData } = match;
+
   const ref = doc(db, "matches", matchId);
   await updateDoc(ref, {
-    ...match,
-    date: match.date ? Timestamp.fromDate(new Date(match.date)) : Timestamp.now(),
+    ...matchData,
   });
 }
 
-// Eliminar una partida
+/* =========================
+   ELIMINAR PARTIDA
+========================= */
 export async function deleteMatch(matchId) {
   const ref = doc(db, "matches", matchId);
   await deleteDoc(ref);
