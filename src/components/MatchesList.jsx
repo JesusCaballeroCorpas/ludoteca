@@ -30,6 +30,24 @@ export default function MatchesList({ matches, onEdit, onDelete }) {
 
           {m.playersCount && <p>👥 Jugadores: {m.playersCount}</p>}
 
+          {m.players && m.players.length > 0 && (
+            <div className="mt-2">
+              <strong>Jugadores:</strong>
+              <ul className="mt-1">
+                {m.players
+                  .slice()
+                  .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+                  .map((p, i) => (
+                    <li key={i}>
+                      {p.winner && "🏆 "}
+                      {p.name}
+                      {p.score !== undefined && ` (${p.score} pts)`}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+
           {m.notes && (
             <p className="mt-1 text-gray-600">📝 {m.notes}</p>
           )}

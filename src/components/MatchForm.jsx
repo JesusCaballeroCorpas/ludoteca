@@ -1,86 +1,238 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getUserPlayers, addPlayer } from "../services/playersService";
 
 export default function MatchForm({
-  initialMatch,
   gameId,
   userId,
   onSave,
   onCancel,
+  initialData, // ⚡ ahora usamos initialData
 }) {
+  // ---------- Estado base ----------
   const [date, setDate] = useState(
-    initialMatch?.date
-      ? initialMatch.date.toISOString().slice(0, 10)
-      : ""
+    initialData?.date
+      ? new Date(initialData.date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
   );
-  const [playersCount, setPlayersCount] = useState(
-    initialMatch?.playersCount ?? ""
-  );
-  const [notes, setNotes] = useState(initialMatch?.notes ?? "");
+  const [notes, setNotes] = useState(initialData?.notes || "");
 
+  // ---------- Jugadores ----------
+  const [allPlayers, setAllPlayers] = useState([]);
+  const [players, setPlayers] = useState(initialData?.players || []);
+  const [selectedPlayerId, setSelectedPlayerId] = useState("");
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [addingNewPlayer, setAddingNewPlayer] = useState(false);
+
+  // ---------- Cargar jugadores del usuario ----------
+  useEffect(() => {
+    async function loadPlayers() {
+      const data = await getUserPlayers(userId);
+      setAllPlayers(data);
+    }
+    loadPlayers();
+  }, [userId]);
+
+  // ---------- Añadir jugador existente ----------
+  function addExistingPlayer() {
+    if (!selectedPlayerId) return;
+    if (players.some(p => p.playerId === selectedPlayerId)) return;
+
+    const player = allPlayers.find(p => p.id === selectedPlayerId);
+    if (!player) return;
+
+    setPlayers([
+      ...players,
+      {
+        playerId: player.id,
+        name: player.name,
+        score: "",
+        winner: false,
+      },
+    ]);
+    setSelectedPlayerId("");
+  }
+
+  // ---------- Crear y añadir jugador nuevo ----------
+  async function createAndAddPlayer() {
+    if (!newPlayerName.trim()) return;
+
+    const exists = allPlayers.some(
+      p => p.name.toLowerCase() === newPlayerName.toLowerCase()
+    );
+    if (exists) {
+      alert("Ese jugador ya existe");
+      return;
+    }
+
+    const newPlayer = await addPlayer(newPlayerName.trim(), userId);
+
+    setAllPlayers([...allPlayers, newPlayer]);
+    setPlayers([
+      ...players,
+      {
+        playerId: newPlayer.id,
+        name: newPlayer.name,
+        score: "",
+        winner: false,
+      },
+    ]);
+
+    setNewPlayerName("");
+    setAddingNewPlayer(false);
+  }
+
+  // ---------- Actualizar jugador ----------
+  function updatePlayer(index, field, value) {
+    const copy = [...players];
+    copy[index][field] = value;
+    setPlayers(copy);
+  }
+
+  // ---------- Eliminar jugador ----------
+  function removePlayer(index) {
+    setPlayers(players.filter((_, i) => i !== index));
+  }
+
+  // ---------- Guardar ----------
   function handleSubmit(e) {
     e.preventDefault();
 
     onSave({
-      id: initialMatch?.id,
       gameId,
       userId,
       date,
-      playersCount: Number(playersCount),
       notes,
+      players: players.map(p => ({
+        ...p,
+        score: p.score === "" ? undefined : Number(p.score),
+      })),
+      createdAt: initialData?.createdAt || Date.now(),
     });
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 max-w-xl mx-auto flex flex-col gap-4"
-    >
+    <form onSubmit={handleSubmit} className="p-4 max-w-xl mx-auto flex flex-col gap-4">
       <h2 className="text-xl font-bold">
-        {initialMatch ? "✏️ Editar partida" : "➕ Nueva partida"}
+        {initialData ? "✏️ Editar partida" : "➕ Nueva partida"}
       </h2>
 
+      {/* Fecha */}
       <div>
         <label className="text-sm font-medium">Fecha</label>
         <input
           type="date"
           className="border p-2 rounded w-full mt-1"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={e => setDate(e.target.value)}
         />
       </div>
 
+      {/* Selector jugador */}
       <div>
-        <label className="text-sm font-medium">Número de jugadores</label>
-        <input
-          type="number"
-          className="border p-2 rounded w-full mt-1"
-          value={playersCount}
-          onChange={(e) => setPlayersCount(e.target.value)}
-        />
+        <label className="text-sm font-medium">Añadir jugador</label>
+        <div className="flex gap-2 mt-1">
+          <select
+            className="border p-2 rounded flex-1"
+            value={selectedPlayerId}
+            onChange={e => setSelectedPlayerId(e.target.value)}
+          >
+            <option value="">Selecciona jugador</option>
+            {allPlayers.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="bg-blue-600 text-white px-3 rounded"
+            onClick={addExistingPlayer}
+          >
+            Añadir
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="text-sm text-blue-600 mt-1"
+          onClick={() => setAddingNewPlayer(true)}
+        >
+          ➕ Crear nuevo jugador
+        </button>
       </div>
 
+      {/* Crear nuevo jugador */}
+      {addingNewPlayer && (
+        <div className="border p-3 rounded bg-gray-50">
+          <input
+            className="border p-2 rounded w-full"
+            placeholder="Nombre del jugador"
+            value={newPlayerName}
+            onChange={e => setNewPlayerName(e.target.value)}
+          />
+          <div className="flex gap-2 mt-2">
+            <button
+              type="button"
+              className="bg-green-600 text-white px-3 py-1 rounded"
+              onClick={createAndAddPlayer}
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              className="border px-3 py-1 rounded"
+              onClick={() => setAddingNewPlayer(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Jugadores añadidos */}
+      {players.map((p, i) => (
+        <div key={i} className="border p-3 rounded bg-white">
+          <div className="flex justify-between items-center">
+            <strong>{p.name}</strong>
+            <button type="button" onClick={() => removePlayer(i)}>❌</button>
+          </div>
+
+          <div className="flex gap-4 mt-2">
+            <label className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={p.winner}
+                onChange={e => updatePlayer(i, "winner", e.target.checked)}
+              />
+              Ganador
+            </label>
+
+            <input
+              type="number"
+              placeholder="Puntuación"
+              className="border p-1 rounded w-24"
+              value={p.score}
+              onChange={e => updatePlayer(i, "score", e.target.value)}
+            />
+          </div>
+        </div>
+      ))}
+
+      {/* Notas */}
       <div>
         <label className="text-sm font-medium">Notas</label>
         <textarea
           className="border p-2 rounded w-full mt-1"
           rows={3}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={e => setNotes(e.target.value)}
         />
       </div>
 
+      {/* Botones */}
       <div className="flex gap-2 mt-4">
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
+        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">
           Guardar
         </button>
-        <button
-          type="button"
-          className="border px-4 py-2 rounded"
-          onClick={onCancel}
-        >
+        <button type="button" className="border px-4 py-2 rounded" onClick={onCancel}>
           Cancelar
         </button>
       </div>

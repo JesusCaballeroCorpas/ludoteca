@@ -8,9 +8,6 @@ import {
   deleteMatch,
 } from "../services/matchesService";
 
-/* =====================
-   GameDetail
-===================== */
 export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [matches, setMatches] = useState([]);
   const [view, setView] = useState("detail");
@@ -18,7 +15,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [confirmingMatchId, setConfirmingMatchId] = useState(null);
   const [confirmingGame, setConfirmingGame] = useState(false);
 
-  // Cargar partidas del juego
+  // ---------- Cargar partidas del juego ----------
   const loadMatches = useCallback(async () => {
     const data = await getMatchesByGame(game.id, game.userId);
     setMatches(data);
@@ -28,7 +25,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     loadMatches();
   }, [loadMatches]);
 
-  // Guardar nueva partida o editar existente
+  // ---------- Guardar partida (nueva o editada) ----------
   async function saveMatch(match) {
     if (editingMatch) {
       await updateMatch(editingMatch.id, match);
@@ -40,7 +37,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     loadMatches();
   }
 
-  // Eliminar partida
+  // ---------- Eliminar partida ----------
   async function deleteMatchConfirmed() {
     if (!confirmingMatchId) return;
     await deleteMatch(confirmingMatchId);
@@ -48,13 +45,13 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     loadMatches();
   }
 
-  // Vista formulario crear / editar partida
+  // ---------- Formulario crear/editar ----------
   if (view === "create-match" || editingMatch) {
     return (
       <MatchForm
         gameId={game.id}
         userId={game.userId}
-        initialMatch={editingMatch}
+        initialData={editingMatch} // ⚡ pasamos la partida completa
         onSave={saveMatch}
         onCancel={() => {
           setEditingMatch(null);
@@ -126,7 +123,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </button>
       </div>
 
-      {/* Modal confirmar eliminación partida */}
+      {/* Modal eliminar partida */}
       {confirmingMatchId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
@@ -150,7 +147,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </div>
       )}
 
-      {/* Modal confirmar eliminación juego */}
+      {/* Modal eliminar juego */}
       {confirmingGame && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
