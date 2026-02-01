@@ -1,0 +1,132 @@
+import { useState } from "react";
+import FiltersPanel from "./FiltersPanel";
+
+/* =====================
+   GameList
+===================== */
+export default function GameList({ games, viewMode, onToggleView, onOpen, onCreate }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    name: "",
+    ageMin: 0,
+    playersMin: 0,
+    durationMin: 0,
+  });
+  const [sort, setSort] = useState({ field: "name", dir: "asc" });
+
+  const toggleSort = (field) => {
+    setSort((prev) =>
+      prev.field === field
+        ? { field, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { field, dir: "asc" }
+    );
+  };
+
+  const filtered = games.filter((g) => {
+    if (filters.name && !g.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+    if (filters.ageMin && g.ageMin < filters.ageMin) return false;
+    if (filters.playersMin && g.maxPlayers < filters.playersMin) return false;
+    if (filters.durationMin && g.durationMin < filters.durationMin) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const d = sort.dir === "asc" ? 1 : -1;
+    if (sort.field === "players") return (a.maxPlayers - b.maxPlayers) * d;
+    if (sort.field === "age") return (a.ageMin - b.ageMin) * d;
+    if (sort.field === "duration") return (a.durationMin - b.durationMin) * d;
+    return a.name.localeCompare(b.name) * d;
+  });
+
+  return (
+    <div className="flex">
+      {filtersOpen && (
+        <div className="hidden md:block w-64 border-r">
+          <FiltersPanel
+            filters={filters}
+            setFilters={setFilters}
+            onApply={() => setFiltersOpen(false)}
+            onClear={() => setFilters({ name: "", ageMin: 0, playersMin: 0, durationMin: 0 })}
+          />
+        </div>
+      )}
+
+      <div className="flex-1 p-4 max-w-5xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">🎲 Mi Ludoteca</h1>
+          <div className="flex gap-2">
+            <button className="border px-3 py-2 rounded" onClick={() => setFiltersOpen((v) => !v)}>🔍</button>
+            <button className="border px-3 py-2 rounded" onClick={onToggleView}>
+              {viewMode === "cards" ? "📋" : "🗂"}
+            </button>
+            <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={onCreate}>➕</button>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mb-3 text-sm">
+          <span>{sorted.length} / {games.length} juegos</span>
+          <div className="flex gap-1">
+            <button onClick={() => toggleSort("name")} className={`px-2 border rounded ${sort.field === "name" ? "bg-blue-100 border-blue-500" : ""}`}>A–Z</button>
+            <button onClick={() => toggleSort("players")} className={`px-2 border rounded ${sort.field === "players" ? "bg-blue-100 border-blue-500" : ""}`}>👥</button>
+            <button onClick={() => toggleSort("age")} className={`px-2 border rounded ${sort.field === "age" ? "bg-blue-100 border-blue-500" : ""}`}>🎂</button>
+            <button onClick={() => toggleSort("duration")} className={`px-2 border rounded ${sort.field === "duration" ? "bg-blue-100 border-blue-500" : ""}`}>⏱</button>
+          </div>
+        </div>
+
+        {viewMode === "cards" ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {sorted.map((g) => (
+              <div key={g.id} className="border rounded p-3 shadow cursor-pointer" onClick={() => onOpen(g)}>
+                <h2 className="font-semibold mb-2">{g.name}</h2>
+                <div className="flex gap-3">
+                  {g.image && (
+                    <img src={g.image} alt={g.name} className="w-1/2 h-40 object-contain bg-gray-100 rounded" />
+                  )}
+                  <div className="w-1/2 text-sm flex flex-col gap-1">
+                    <span>👥 {g.minPlayers}-{g.maxPlayers}</span>
+                    <span>🎂 {g.ageMin}+</span>
+                    <span>⏱ {g.durationMin} min</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left">
+                <th>Juego</th>
+                <th>👥</th>
+                <th>🎂</th>
+                <th>⏱</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((g) => (
+                <tr key={g.id} className="border-b cursor-pointer" onClick={() => onOpen(g)}>
+                  <td>{g.name}</td>
+                  <td>{g.minPlayers}-{g.maxPlayers}</td>
+                  <td>{g.ageMin}+</td>
+                  <td>{g.durationMin} min</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {filtersOpen && (
+        <div className="md:hidden fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div className="bg-white w-11/12 rounded">
+            <FiltersPanel
+              filters={filters}
+              setFilters={setFilters}
+              onApply={() => setFiltersOpen(false)}
+              onClear={() => setFilters({ name: "", ageMin: 0, playersMin: 0, durationMin: 0 })}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
