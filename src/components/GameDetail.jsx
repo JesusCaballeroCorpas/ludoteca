@@ -8,6 +8,23 @@ import {
   deleteMatch,
 } from "../services/matchesService";
 
+/* =====================
+   Helpers de formato
+===================== */
+function formatRange(min, max, suffix = "") {
+  if (min && max && min !== max) return `${min}-${max}${suffix}`;
+  if (min) return `${min}${suffix}`;
+  if (max) return `${max}${suffix}`;
+  return "";
+}
+
+function formatAge(min, max) {
+  if (min && max && min !== max) return `${min}-${max}`;
+  if (min) return `${min}+`;
+  if (max) return `${max}`;
+  return "";
+}
+
 export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [matches, setMatches] = useState([]);
   const [view, setView] = useState("detail");
@@ -15,7 +32,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [confirmingMatchId, setConfirmingMatchId] = useState(null);
   const [confirmingGame, setConfirmingGame] = useState(false);
 
-  // ---------- Cargar partidas del juego ----------
   const loadMatches = useCallback(async () => {
     const data = await getMatchesByGame(game.id, game.userId);
     setMatches(data);
@@ -25,7 +41,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     loadMatches();
   }, [loadMatches]);
 
-  // ---------- Guardar partida (nueva o editada) ----------
   async function saveMatch(match) {
     if (editingMatch) {
       await updateMatch(editingMatch.id, match);
@@ -37,21 +52,12 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     loadMatches();
   }
 
-  // ---------- Eliminar partida ----------
-  async function deleteMatchConfirmed() {
-    if (!confirmingMatchId) return;
-    await deleteMatch(confirmingMatchId);
-    setConfirmingMatchId(null);
-    loadMatches();
-  }
-
-  // ---------- Formulario crear/editar ----------
   if (view === "create-match" || editingMatch) {
     return (
       <MatchForm
         gameId={game.id}
         userId={game.userId}
-        initialData={editingMatch} // ⚡ pasamos la partida completa
+        initialData={editingMatch}
         onSave={saveMatch}
         onCancel={() => {
           setEditingMatch(null);
@@ -74,9 +80,9 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
           />
         )}
         <div className="w-1/2 flex flex-col gap-2">
-          <span>👥 {game.minPlayers}-{game.maxPlayers}</span>
-          <span>🎂 {game.ageMin}+</span>
-          <span>⏱ {game.durationMin} min</span>
+          <span>👥 {formatRange(game.minPlayers, game.maxPlayers)}</span>
+          <span>🎂 {formatAge(game.ageMin, game.ageMax)}</span>
+          <span>⏱ {formatRange(game.durationMin, game.durationMax, " min")}</span>
         </div>
       </div>
 
@@ -128,18 +134,15 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
             <h2 className="font-semibold mb-4">¿Eliminar partida?</h2>
-            <p className="text-sm mb-4">Esta acción no se puede deshacer.</p>
             <div className="flex justify-end gap-2">
-              <button
-                className="border px-3 py-2 rounded"
-                onClick={() => setConfirmingMatchId(null)}
-              >
+              <button className="border px-3 py-2 rounded" onClick={() => setConfirmingMatchId(null)}>
                 Cancelar
               </button>
-              <button
-                className="bg-red-600 text-white px-3 py-2 rounded"
-                onClick={deleteMatchConfirmed}
-              >
+              <button className="bg-red-600 text-white px-3 py-2 rounded" onClick={async () => {
+                await deleteMatch(confirmingMatchId);
+                setConfirmingMatchId(null);
+                loadMatches();
+              }}>
                 Eliminar
               </button>
             </div>
@@ -152,21 +155,14 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
             <h2 className="font-semibold mb-4">¿Eliminar juego?</h2>
-            <p className="text-sm mb-4">Esta acción no se puede deshacer.</p>
             <div className="flex justify-end gap-2">
-              <button
-                className="border px-3 py-2 rounded"
-                onClick={() => setConfirmingGame(false)}
-              >
+              <button className="border px-3 py-2 rounded" onClick={() => setConfirmingGame(false)}>
                 Cancelar
               </button>
-              <button
-                className="bg-red-600 text-white px-3 py-2 rounded"
-                onClick={() => {
-                  onDelete(game.id);
-                  setConfirmingGame(false);
-                }}
-              >
+              <button className="bg-red-600 text-white px-3 py-2 rounded" onClick={() => {
+                onDelete(game.id);
+                setConfirmingGame(false);
+              }}>
                 Eliminar
               </button>
             </div>

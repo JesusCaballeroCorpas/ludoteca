@@ -30,6 +30,7 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
       </h1>
 
       <div className="flex flex-col gap-4">
+        {/* Nombre */}
         <div>
           <label className="text-sm font-medium">Nombre del juego</label>
           <input
@@ -39,60 +40,94 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
           />
         </div>
 
+        {/* Número de jugadores */}
         <div>
           <label className="text-sm font-medium">Número de jugadores</label>
           <div className="flex gap-2 mt-1">
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.minPlayers}
-              onChange={(e) => update("minPlayers", e.target.value ? Number(e.target.value) : "")}
-            />
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.maxPlayers}
-              onChange={(e) => update("maxPlayers", e.target.value ? Number(e.target.value) : "")}
-            />
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Mínimo</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.minPlayers}
+                onChange={(e) =>
+                  update("minPlayers", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Máximo</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.maxPlayers}
+                onChange={(e) =>
+                  update("maxPlayers", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
           </div>
         </div>
 
+        {/* Duración */}
         <div>
           <label className="text-sm font-medium">Duración (minutos)</label>
           <div className="flex gap-2 mt-1">
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.durationMin}
-              onChange={(e) => update("durationMin", e.target.value ? Number(e.target.value) : "")}
-            />
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.durationMax}
-              onChange={(e) => update("durationMax", e.target.value ? Number(e.target.value) : "")}
-            />
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Mínima</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.durationMin}
+                onChange={(e) =>
+                  update("durationMin", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Máxima</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.durationMax}
+                onChange={(e) =>
+                  update("durationMax", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
           </div>
         </div>
 
+        {/* Edad */}
         <div>
           <label className="text-sm font-medium">Edad recomendada</label>
           <div className="flex gap-2 mt-1">
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.ageMin}
-              onChange={(e) => update("ageMin", e.target.value ? Number(e.target.value) : "")}
-            />
-            <input
-              type="number"
-              className="border p-2 rounded w-1/2"
-              value={game.ageMax}
-              onChange={(e) => update("ageMax", e.target.value ? Number(e.target.value) : "")}
-            />
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Mínima</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.ageMin}
+                onChange={(e) =>
+                  update("ageMin", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
+            <div className="w-1/2 flex flex-col">
+              <span className="text-xs text-gray-600 mb-1">Máxima</span>
+              <input
+                type="number"
+                className="border p-2 rounded"
+                value={game.ageMax}
+                onChange={(e) =>
+                  update("ageMax", e.target.value ? Number(e.target.value) : "")
+                }
+              />
+            </div>
           </div>
         </div>
 
+        {/* Editorial */}
         <div>
           <label className="text-sm font-medium">Editorial</label>
           <input
@@ -102,6 +137,7 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
           />
         </div>
 
+        {/* Imagen */}
         <div>
           <label className="text-sm font-medium">Imagen</label>
           <input
@@ -118,6 +154,7 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
           />
         </div>
 
+        {/* Comentarios */}
         <div>
           <label className="text-sm font-medium">Comentarios</label>
           <textarea
@@ -128,6 +165,7 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
           />
         </div>
 
+        {/* Acciones */}
         <div className="flex gap-2 mt-4">
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded"

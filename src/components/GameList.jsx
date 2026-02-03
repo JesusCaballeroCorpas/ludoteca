@@ -8,11 +8,32 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     name: "",
-    ageMin: 0,
-    playersMin: 0,
-    durationMin: 0,
+    ageMin: "",
+    playersMin: "",
+    durationMin: "",
   });
   const [sort, setSort] = useState({ field: "name", dir: "asc" });
+
+  /* =====================
+     Helpers de formato
+  ===================== */
+  const formatPlayers = (min, max) => {
+    if (!min && !max) return "-";
+    if (!max || min === max) return min || max;
+    return `${min}–${max}`;
+  };
+
+  const formatAge = (min, max) => {
+    if (!min && !max) return "-";
+    if (!max || min === max) return `${min}+`;
+    return `${min}–${max}`;
+  };
+
+  const formatDuration = (min, max) => {
+    if (!min && !max) return "-";
+    if (!max || min === max) return `${min} min`;
+    return `${min}–${max} min`;
+  };
 
   const toggleSort = (field) => {
     setSort((prev) =>
@@ -22,11 +43,14 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
     );
   };
 
+  /* =====================
+     Filtros
+  ===================== */
   const filtered = games.filter((g) => {
     if (filters.name && !g.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
-    if (filters.ageMin && g.ageMin < filters.ageMin) return false;
-    if (filters.playersMin && g.maxPlayers < filters.playersMin) return false;
-    if (filters.durationMin && g.durationMin < filters.durationMin) return false;
+    if (filters.ageMin !== "" && g.ageMin < filters.ageMin) return false;
+    if (filters.playersMin !== "" && g.maxPlayers < filters.playersMin) return false;
+    if (filters.durationMin !== "" && g.durationMin < filters.durationMin) return false;
     return true;
   });
 
@@ -38,6 +62,14 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
     return a.name.localeCompare(b.name) * d;
   });
 
+  const clearFilters = () =>
+    setFilters({
+      name: "",
+      ageMin: "",
+      playersMin: "",
+      durationMin: "",
+    });
+
   return (
     <div className="flex">
       {filtersOpen && (
@@ -46,7 +78,7 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
             filters={filters}
             setFilters={setFilters}
             onApply={() => setFiltersOpen(false)}
-            onClear={() => setFilters({ name: "", ageMin: 0, playersMin: 0, durationMin: 0 })}
+            onClear={clearFilters}
           />
         </div>
       )}
@@ -83,9 +115,9 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
                     <img src={g.image} alt={g.name} className="w-1/2 h-40 object-contain bg-gray-100 rounded" />
                   )}
                   <div className="w-1/2 text-sm flex flex-col gap-1">
-                    <span>👥 {g.minPlayers}-{g.maxPlayers}</span>
-                    <span>🎂 {g.ageMin}+</span>
-                    <span>⏱ {g.durationMin} min</span>
+                    <span>👥 {formatPlayers(g.minPlayers, g.maxPlayers)}</span>
+                    <span>🎂 {formatAge(g.ageMin, g.ageMax)}</span>
+                    <span>⏱ {formatDuration(g.durationMin, g.durationMax)}</span>
                   </div>
                 </div>
               </div>
@@ -105,9 +137,9 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
               {sorted.map((g) => (
                 <tr key={g.id} className="border-b cursor-pointer" onClick={() => onOpen(g)}>
                   <td>{g.name}</td>
-                  <td>{g.minPlayers}-{g.maxPlayers}</td>
-                  <td>{g.ageMin}+</td>
-                  <td>{g.durationMin} min</td>
+                  <td>{formatPlayers(g.minPlayers, g.maxPlayers)}</td>
+                  <td>{formatAge(g.ageMin, g.ageMax)}</td>
+                  <td>{formatDuration(g.durationMin, g.durationMax)}</td>
                 </tr>
               ))}
             </tbody>
@@ -122,7 +154,7 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
               filters={filters}
               setFilters={setFilters}
               onApply={() => setFiltersOpen(false)}
-              onClear={() => setFilters({ name: "", ageMin: 0, playersMin: 0, durationMin: 0 })}
+              onClear={clearFilters}
             />
           </div>
         </div>
