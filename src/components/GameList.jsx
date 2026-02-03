@@ -124,26 +124,28 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
             ))}
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th>Juego</th>
-                <th>👥</th>
-                <th>🎂</th>
-                <th>⏱</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((g) => (
-                <tr key={g.id} className="border-b cursor-pointer" onClick={() => onOpen(g)}>
-                  <td>{g.name}</td>
-                  <td>{formatPlayers(g.minPlayers, g.maxPlayers)}</td>
-                  <td>{formatAge(g.ageMin, g.ageMax)}</td>
-                  <td>{formatDuration(g.durationMin, g.durationMax)}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-md">
+              <thead>
+                <tr className="text-left">
+                  <th className="w-1/3 sm:w-auto">Juego</th>
+                  <th className="w-1/6 text-center">👥</th>
+                  <th className="w-1/6 text-center">🎂</th>
+                  <th className="w-1/5 text-center">⏱</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sorted.map((g) => (
+                  <tr key={g.id} className="border-b cursor-pointer" onClick={() => onOpen(g)}>
+                    <td className="break-words">{g.name}</td>
+                    <td className="text-center">{formatPlayers(g.minPlayers, g.maxPlayers)}</td>
+                    <td className="text-center">{formatAge(g.ageMin, g.ageMax)}</td>
+                    <td className="text-center">{formatDuration(g.durationMin, g.durationMax)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
