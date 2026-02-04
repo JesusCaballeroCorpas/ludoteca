@@ -36,7 +36,7 @@ export default function Login({ onLogin }) {
           <div className="text-4xl mb-2">🎲</div>
           <h1 className="text-2xl font-bold">Mi Ludoteca</h1>
           <p className="text-sm text-gray-500">
-            Registra tus juegos partidas
+            Registra tus juegos y partidas
           </p>
         </div>
 
