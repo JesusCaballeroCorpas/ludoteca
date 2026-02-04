@@ -12,33 +12,61 @@ import GameDetail from "../components/GameDetail";
 
 export default function Ludoteca({ user }) {
   const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState("list");
   const [viewMode, setViewMode] = useState("cards");
   const [selectedGame, setSelectedGame] = useState(null);
 
   useEffect(() => {
-    loadGames();
+    loadGames(); // eslint-disable-next-line
   }, []);
 
   async function loadGames() {
-    const data = await getUserGames(user.uid);
-    setGames(data);
+    setLoading(true);
+    try {
+      const data = await getUserGames(user.uid);
+      setGames(data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function saveGame(game) {
-    if (game.id) {
-      await updateGame(game.id, game);
-    } else {
-      await addGame(game, user.uid);
+    setLoading(true);
+    try {
+      if (game.id) {
+        await updateGame(game.id, game);
+      } else {
+        await addGame(game, user.uid);
+      }
+      await loadGames();
+      setView("list");
+    } finally {
+      setLoading(false);
     }
-    await loadGames();
-    setView("list");
   }
 
   async function removeGame(id) {
-    await deleteGame(id);
-    await loadGames();
-    setView("list");
+    setLoading(true);
+    try {
+      await deleteGame(id);
+      await loadGames();
+      setView("list");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* =====================
+     Loader bloqueante
+  ===================== */
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
+        <span className="text-sm text-gray-600">🎲 Cargando juegos…</span>
+      </div>
+    );
   }
 
   if (view === "create")
@@ -68,7 +96,7 @@ export default function Ludoteca({ user }) {
       games={games}
       viewMode={viewMode}
       onToggleView={() =>
-        setViewMode(v => (v === "cards" ? "list" : "cards"))
+        setViewMode((v) => (v === "cards" ? "list" : "cards"))
       }
       onCreate={() => setView("create")}
       onOpen={(g) => {
