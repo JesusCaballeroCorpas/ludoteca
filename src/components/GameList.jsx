@@ -4,7 +4,14 @@ import FiltersPanel from "./FiltersPanel";
 /* =====================
    GameList
 ===================== */
-export default function GameList({ games, viewMode, onToggleView, onOpen, onCreate }) {
+export default function GameList({
+  games,
+  viewMode,
+  onToggleView,
+  onOpen,
+  onCreate,
+  onStats, // 👈 NUEVO
+}) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     name: "",
@@ -87,11 +94,23 @@ export default function GameList({ games, viewMode, onToggleView, onOpen, onCrea
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">🎲 Mi Ludoteca</h1>
           <div className="flex gap-2">
-            <button className="border px-3 py-2 rounded" onClick={() => setFiltersOpen((v) => !v)}>🔍</button>
+            <button className="border px-3 py-2 rounded" onClick={() => setFiltersOpen(v => !v)}>🔍</button>
+
+            {/* 📊 Estadísticas */}
+            <button
+              className="border px-3 py-2 rounded"
+              onClick={onStats}
+              title="Estadísticas"
+            >
+              📊
+            </button>
+
             <button className="border px-3 py-2 rounded" onClick={onToggleView}>
               {viewMode === "cards" ? "📋" : "🗂"}
             </button>
-            <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={onCreate}>➕</button>
+            <button className="bg-blue-600 text-white px-3 py-2 rounded" onClick={onCreate}>
+              ➕
+            </button>
           </div>
         </div>
 
