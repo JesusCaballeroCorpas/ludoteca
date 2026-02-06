@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { getMatchesByUser } from "../services/matchesService";
 import StatsPlayers from "./StatsPlayers";
+import StatsGameDetail from "./StatsGameDetail";
 
 export default function StatsGames({ user, games, onBack }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [totalMatches, setTotalMatches] = useState(0);
   const [tab, setTab] = useState("games"); // games | players
+  const [selectedGame, setSelectedGame] = useState(null);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -48,6 +50,17 @@ export default function StatsGames({ user, games, onBack }) {
       <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
         <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
+    );
+  }
+
+  // 👉 Detalle de un juego
+  if (selectedGame) {
+    return (
+      <StatsGameDetail
+        user={user}
+        game={selectedGame}
+        onBack={() => setSelectedGame(null)}
+      />
     );
   }
 
@@ -100,9 +113,14 @@ export default function StatsGames({ user, games, onBack }) {
 
           <div className="flex flex-col gap-4">
             {stats.map(s => (
-              <div
+              <button
                 key={s.gameId}
-                className="border rounded-xl p-4 md:p-6 shadow-sm"
+                onClick={() =>
+                  setSelectedGame(
+                    games.find(g => g.id === s.gameId)
+                  )
+                }
+                className="border rounded-xl p-4 md:p-6 shadow-sm text-left hover:bg-gray-50"
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold text-base md:text-lg">
@@ -119,7 +137,7 @@ export default function StatsGames({ user, games, onBack }) {
                     style={{ width: `${s.percentage}%` }}
                   />
                 </div>
-              </div>
+              </button>
             ))}
 
             {stats.length === 0 && (
