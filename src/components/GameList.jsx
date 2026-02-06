@@ -92,7 +92,7 @@ export default function GameList({
 
       <div className="flex-1 p-4 max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">🎲 Mi Ludoteca</h1>
+          <h1 className="text-xl font-bold">🎲 Mi Ludoteca</h1>
           <div className="flex gap-2">
             <button className="border px-3 py-2 rounded" onClick={() => setFiltersOpen(v => !v)}>🔍</button>
 

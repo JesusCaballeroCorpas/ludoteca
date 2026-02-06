@@ -9,7 +9,7 @@ import {
 import GameList from "../components/GameList";
 import GameForm from "../components/GameForm";
 import GameDetail from "../components/GameDetail";
-import StatsGames from "../components/StatsGames"; // 👈 NUEVO
+import StatsGames from "../components/StatsGames";
 
 export default function Ludoteca({ user }) {
   const [games, setGames] = useState([]);
@@ -76,6 +76,7 @@ export default function Ludoteca({ user }) {
   if (view === "stats") {
     return (
       <StatsGames
+        user={user}
         games={games}
         onBack={() => setView("list")}
       />
@@ -112,7 +113,7 @@ export default function Ludoteca({ user }) {
         setViewMode((v) => (v === "cards" ? "list" : "cards"))
       }
       onCreate={() => setView("create")}
-      onStats={() => setView("stats")} // 👈 CONEXIÓN CON 📊
+      onStats={() => setView("stats")}
       onOpen={(g) => {
         setSelectedGame(g);
         setView("detail");

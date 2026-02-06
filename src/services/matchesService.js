@@ -70,3 +70,25 @@ export async function deleteMatch(matchId) {
   const ref = doc(db, "matches", matchId);
   await deleteDoc(ref);
 }
+
+export async function getMatchesByUser(userId) {
+  const q = query(
+    matchesCollection,
+    where("userId", "==", userId)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(d => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ...data,
+      date: data.date?.toDate
+        ? data.date.toDate()
+        : data.date
+        ? new Date(data.date)
+        : null,
+    };
+  });
+}
