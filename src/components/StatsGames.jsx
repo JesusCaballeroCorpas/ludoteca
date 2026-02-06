@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { getMatchesByUser } from "../services/matchesService";
+import StatsPlayers from "./StatsPlayers";
 
 export default function StatsGames({ user, games, onBack }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [totalMatches, setTotalMatches] = useState(0);
+  const [tab, setTab] = useState("games"); // games | players
 
   useEffect(() => {
-    if (!user?.uid) return; // 🛡️ PROTECCIÓN CLAVE
+    if (!user?.uid) return;
 
     async function loadStats() {
       setLoading(true);
@@ -44,47 +46,92 @@ export default function StatsGames({ user, games, onBack }) {
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
-        <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <div className="flex items-center gap-2 mb-4">
-        <button onClick={onBack} className="border px-3 py-2 rounded">
+    <div className="w-full px-4 md:px-8 py-4 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={onBack}
+          className="border px-4 py-3 rounded-lg text-lg md:text-xl hover:bg-gray-100"
+        >
           ⬅️
         </button>
-        <h1 className="text-xl font-bold">📊 Estadísticas</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">
+          📊 Estadísticas
+        </h1>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4">
-        Total de partidas: <strong>{totalMatches}</strong>
-      </p>
+      {/* Tabs */}
+      <div className="flex gap-3 mb-6">
+        <button
+          onClick={() => setTab("games")}
+          className={`flex-1 px-4 py-3 rounded-lg border text-sm md:text-base font-medium ${
+            tab === "games"
+              ? "bg-blue-600 text-white"
+              : "hover:bg-gray-100"
+          }`}
+        >
+          🎲 Juegos
+        </button>
+        <button
+          onClick={() => setTab("players")}
+          className={`flex-1 px-4 py-3 rounded-lg border text-sm md:text-base font-medium ${
+            tab === "players"
+              ? "bg-blue-600 text-white"
+              : "hover:bg-gray-100"
+          }`}
+        >
+          🏆 Jugadores
+        </button>
+      </div>
 
-      <div className="flex flex-col gap-3">
-        {stats.map(s => (
-          <div key={s.gameId} className="border rounded p-3">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="font-medium">{s.name}</span>
-              <span>{s.count} ({s.percentage}%)</span>
-            </div>
-
-            <div className="h-2 bg-gray-200 rounded overflow-hidden">
-              <div
-                className="h-full bg-blue-600"
-                style={{ width: `${s.percentage}%` }}
-              />
-            </div>
-          </div>
-        ))}
-
-        {stats.length === 0 && (
-          <p className="text-sm text-gray-500 text-center mt-6">
-            Aún no hay partidas registradas
+      {/* CONTENT */}
+      {tab === "games" && (
+        <>
+          <p className="text-sm md:text-base text-gray-600 mb-6">
+            Total de partidas registradas:{" "}
+            <strong>{totalMatches}</strong>
           </p>
-        )}
-      </div>
+
+          <div className="flex flex-col gap-4">
+            {stats.map(s => (
+              <div
+                key={s.gameId}
+                className="border rounded-xl p-4 md:p-6 shadow-sm"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-base md:text-lg">
+                    {s.name}
+                  </span>
+                  <span className="text-sm md:text-base">
+                    {s.count} ({s.percentage}%)
+                  </span>
+                </div>
+
+                <div className="h-3 bg-gray-200 rounded overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 transition-all"
+                    style={{ width: `${s.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+
+            {stats.length === 0 && (
+              <p className="text-sm text-gray-500 text-center mt-10">
+                Aún no hay partidas registradas
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {tab === "players" && <StatsPlayers user={user} />}
     </div>
   );
 }
