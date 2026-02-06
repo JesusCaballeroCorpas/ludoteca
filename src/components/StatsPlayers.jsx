@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { getMatchesByUser } from "../services/matchesService";
+import StatsPlayerDetail from "./StatsPlayerDetail";
 
-export default function StatsPlayers({ user }) {
+export default function StatsPlayers({ user, games }) {
   const [loading, setLoading] = useState(true);
   const [ranking, setRanking] = useState([]);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   useEffect(() => {
     if (!user?.uid) return;
+    if (!games) return;
 
     async function loadStats() {
       setLoading(true);
@@ -17,26 +20,23 @@ export default function StatsPlayers({ user }) {
 
       matches.forEach(match => {
         match.players?.forEach(p => {
-          if (!playersMap[p.playerId]) {
-            playersMap[p.playerId] = {
-              id: p.playerId,
+          if (!playersMap[p.name]) {
+            playersMap[p.name] = {
               name: p.name,
               games: 0,
               wins: 0,
             };
           }
 
-          playersMap[p.playerId].games += 1;
-          if (p.winner) playersMap[p.playerId].wins += 1;
+          playersMap[p.name].games += 1;
+          if (p.winner) playersMap[p.name].wins += 1;
         });
       });
 
       const rankingData = Object.values(playersMap)
         .map(p => ({
           ...p,
-          winRate: p.games
-            ? Math.round((p.wins / p.games) * 100)
-            : 0,
+          winRate: p.games ? Math.round((p.wins / p.games) * 100) : 0,
         }))
         .sort((a, b) => {
           if (b.wins !== a.wins) return b.wins - a.wins;
@@ -48,7 +48,7 @@ export default function StatsPlayers({ user }) {
     }
 
     loadStats();
-  }, [user]);
+  }, [user, games]);
 
   if (loading) {
     return (
@@ -58,12 +58,24 @@ export default function StatsPlayers({ user }) {
     );
   }
 
+  if (selectedPlayer) {
+    return (
+      <StatsPlayerDetail
+        user={user}
+        player={selectedPlayer}
+        games={games}
+        onBack={() => setSelectedPlayer(null)}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {ranking.map((p, index) => (
-        <div
-          key={p.id}
-          className="border rounded p-3 flex items-center justify-between"
+        <button
+          key={p.name}
+          onClick={() => setSelectedPlayer(p)}
+          className="border rounded p-3 flex items-center justify-between hover:bg-gray-50 text-left w-full"
         >
           <div>
             <div className="font-medium">
@@ -77,11 +89,14 @@ export default function StatsPlayers({ user }) {
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="text-sm font-semibold">{p.winRate}%</div>
-            <div className="text-xs text-gray-500">radio de victorias</div>
+          <div className="flex items-center gap-2 text-right">
+            <div>
+              <div className="text-sm font-semibold">{p.winRate}%</div>
+              <div className="text-xs text-gray-500">ratio de victorias</div>
+            </div>
+            <span className="text-gray-400 text-xl">➔</span>
           </div>
-        </div>
+        </button>
       ))}
 
       {ranking.length === 0 && (

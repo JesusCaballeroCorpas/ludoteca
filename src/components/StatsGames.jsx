@@ -11,7 +11,7 @@ export default function StatsGames({ user, games, onBack }) {
   const [selectedGame, setSelectedGame] = useState(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid || !games) return;
 
     async function loadStats() {
       setLoading(true);
@@ -30,6 +30,7 @@ export default function StatsGames({ user, games, onBack }) {
           return {
             gameId,
             name: game?.name || "Juego eliminado",
+            image: game?.image || "",
             count,
             percentage: matches.length
               ? Math.round((count / matches.length) * 100)
@@ -53,12 +54,12 @@ export default function StatsGames({ user, games, onBack }) {
     );
   }
 
-  // 👉 Detalle de un juego
   if (selectedGame) {
     return (
       <StatsGameDetail
         user={user}
         game={selectedGame}
+        games={games}
         onBack={() => setSelectedGame(null)}
       />
     );
@@ -84,9 +85,7 @@ export default function StatsGames({ user, games, onBack }) {
         <button
           onClick={() => setTab("games")}
           className={`flex-1 px-4 py-3 rounded-lg border text-sm md:text-base font-medium ${
-            tab === "games"
-              ? "bg-blue-600 text-white"
-              : "hover:bg-gray-100"
+            tab === "games" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
           }`}
         >
           🎲 Juegos
@@ -94,21 +93,18 @@ export default function StatsGames({ user, games, onBack }) {
         <button
           onClick={() => setTab("players")}
           className={`flex-1 px-4 py-3 rounded-lg border text-sm md:text-base font-medium ${
-            tab === "players"
-              ? "bg-blue-600 text-white"
-              : "hover:bg-gray-100"
+            tab === "players" ? "bg-blue-600 text-white" : "hover:bg-gray-100"
           }`}
         >
           🏆 Jugadores
         </button>
       </div>
 
-      {/* CONTENT */}
+      {/* Content */}
       {tab === "games" && (
         <>
           <p className="text-sm md:text-base text-gray-600 mb-6">
-            Total de partidas registradas:{" "}
-            <strong>{totalMatches}</strong>
+            Total de partidas registradas: <strong>{totalMatches}</strong>
           </p>
 
           <div className="flex flex-col gap-4">
@@ -116,26 +112,32 @@ export default function StatsGames({ user, games, onBack }) {
               <button
                 key={s.gameId}
                 onClick={() =>
-                  setSelectedGame(
-                    games.find(g => g.id === s.gameId)
-                  )
+                  setSelectedGame(games.find(g => g.id === s.gameId))
                 }
-                className="border rounded-xl p-4 md:p-6 shadow-sm text-left hover:bg-gray-50"
+                className="border rounded-xl p-4 md:p-6 shadow-sm text-left hover:bg-gray-50 flex items-center gap-4"
               >
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-base md:text-lg">
-                    {s.name}
-                  </span>
-                  <span className="text-sm md:text-base">
-                    {s.count} ({s.percentage}%)
-                  </span>
-                </div>
-
-                <div className="h-3 bg-gray-200 rounded overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 transition-all"
-                    style={{ width: `${s.percentage}%` }}
+                {s.image && (
+                  <img
+                    src={s.image}
+                    alt={s.name}
+                    className="w-12 h-12 object-contain rounded"
                   />
+                )}
+                <div className="flex-1">
+                  <div className="flex justify-between mb-2">
+                    <span className="font-semibold text-base md:text-lg">
+                      {s.name}
+                    </span>
+                    <span className="text-sm md:text-base">
+                      {s.count} ({s.percentage}%)
+                    </span>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 transition-all"
+                      style={{ width: `${s.percentage}%` }}
+                    />
+                  </div>
                 </div>
               </button>
             ))}
@@ -149,7 +151,7 @@ export default function StatsGames({ user, games, onBack }) {
         </>
       )}
 
-      {tab === "players" && <StatsPlayers user={user} />}
+      {tab === "players" && <StatsPlayers user={user} games={games} />}
     </div>
   );
 }
