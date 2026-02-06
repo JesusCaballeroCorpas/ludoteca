@@ -139,6 +139,7 @@ export default function StatsGames({ user, games, onBack }) {
                     />
                   </div>
                 </div>
+                <span className="text-gray-400 text-xl">➔</span>
               </button>
             ))}
 

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getMatchesByUser } from "../services/matchesService";
 
-export default function StatsGameDetail({ user, game, onBack }) {
+export default function StatsGameDetail({ user, game, games, onBack }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
 
   useEffect(() => {
+    if (!user?.uid) return;
+
     async function load() {
       setLoading(true);
 
@@ -28,14 +30,14 @@ export default function StatsGameDetail({ user, game, onBack }) {
         });
       });
 
-      setStats(
-        Object.values(counter).sort((a, b) => b.wins - a.wins)
-      );
+      setStats(Object.values(counter).sort((a, b) => b.wins - a.wins));
       setLoading(false);
     }
 
     load();
   }, [user, game]);
+
+  const gameImage = games?.find(g => g.id === game.id)?.image || "";
 
   if (loading) {
     return (
@@ -55,8 +57,11 @@ export default function StatsGameDetail({ user, game, onBack }) {
         >
           ⬅️
         </button>
-        <h1 className="text-2xl md:text-3xl font-bold">
-          🎲 {game.name}
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+          {gameImage && (
+            <img src={gameImage} alt={game.name} className="w-12 h-12 object-contain rounded" />
+          )}
+          {game.name}
         </h1>
       </div>
 
@@ -64,21 +69,13 @@ export default function StatsGameDetail({ user, game, onBack }) {
         {stats.map(p => (
           <div
             key={p.name}
-            className="border rounded-xl p-4 md:p-6 shadow-sm"
+            className="border rounded-xl p-4 md:p-6 shadow-sm flex justify-between items-center"
           >
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold text-base md:text-lg">
-                {p.name}
-              </span>
-              <span className="text-sm md:text-base">
-                {p.wins} 🏆 / {p.games}
-              </span>
-            </div>
-
-            <div className="text-xs md:text-sm text-gray-600">
-              {p.games
-                ? `${Math.round((p.wins / p.games) * 100)}% victorias`
-                : "0% victorias"}
+            <div>
+              <span className="font-semibold text-base md:text-lg">{p.name}</span>
+              <div className="text-xs md:text-sm text-gray-600">
+                {p.games} partidas · {p.wins} victorias · {p.games ? Math.round((p.wins / p.games) * 100) : 0}% victorias
+              </div>
             </div>
           </div>
         ))}
