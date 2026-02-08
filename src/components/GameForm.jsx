@@ -1,6 +1,44 @@
 import { useState } from "react";
 
 /* =====================
+   Util: compresión imagen
+===================== */
+function compressImage(file, maxSize = 300, quality = 0.5) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    const img = new Image();
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(
+        maxSize / img.width,
+        maxSize / img.height,
+        1
+      );
+
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const compressedBase64 = canvas.toDataURL(
+        "image/jpeg",
+        quality
+      );
+
+      resolve(compressedBase64);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/* =====================
    GameForm
 ===================== */
 export default function GameForm({ initialGame, onSave, onCancel }) {
@@ -18,6 +56,8 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
       comments: "",
     }
   );
+
+  const [compressing, setCompressing] = useState(false);
 
   const update = (field, value) => {
     setGame((g) => ({ ...g, [field]: value }));
@@ -42,27 +82,39 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
 
         {/* Número de jugadores */}
         <div>
-          <label className="text-sm font-medium">Número de jugadores</label>
+          <label className="text-sm font-medium">
+            Número de jugadores
+          </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Mínimo</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Mínimo
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.minPlayers}
                 onChange={(e) =>
-                  update("minPlayers", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "minPlayers",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Máximo</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Máximo
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.maxPlayers}
                 onChange={(e) =>
-                  update("maxPlayers", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "maxPlayers",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
@@ -71,27 +123,39 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
 
         {/* Duración */}
         <div>
-          <label className="text-sm font-medium">Duración (minutos)</label>
+          <label className="text-sm font-medium">
+            Duración (minutos)
+          </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Mínima</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Mínima
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.durationMin}
                 onChange={(e) =>
-                  update("durationMin", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "durationMin",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Máxima</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Máxima
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.durationMax}
                 onChange={(e) =>
-                  update("durationMax", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "durationMax",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
@@ -100,27 +164,39 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
 
         {/* Edad */}
         <div>
-          <label className="text-sm font-medium">Edad recomendada</label>
+          <label className="text-sm font-medium">
+            Edad recomendada
+          </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Mínima</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Mínima
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.ageMin}
                 onChange={(e) =>
-                  update("ageMin", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "ageMin",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
             <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">Máxima</span>
+              <span className="text-xs text-gray-600 mb-1">
+                Máxima
+              </span>
               <input
                 type="number"
                 className="border p-2 rounded w-full"
                 value={game.ageMax}
                 onChange={(e) =>
-                  update("ageMax", e.target.value ? Number(e.target.value) : "")
+                  update(
+                    "ageMax",
+                    e.target.value ? Number(e.target.value) : ""
+                  )
                 }
               />
             </div>
@@ -144,14 +220,22 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
             type="file"
             accept="image/*"
             className="border p-2 rounded w-full mt-1"
-            onChange={(e) => {
+            disabled={compressing}
+            onChange={async (e) => {
               const file = e.target.files && e.target.files[0];
               if (!file) return;
-              const reader = new FileReader();
-              reader.onload = () => update("image", String(reader.result));
-              reader.readAsDataURL(file);
+
+              setCompressing(true);
+              const compressed = await compressImage(file);
+              update("image", compressed);
+              setCompressing(false);
             }}
           />
+          {compressing && (
+            <p className="text-xs text-gray-500 mt-1">
+              Optimizando imagen…
+            </p>
+          )}
         </div>
 
         {/* Comentarios */}
@@ -168,8 +252,9 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
         {/* Acciones */}
         <div className="flex flex-col sm:flex-row gap-2 mt-4">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto"
+            className="bg-blue-600 text-white px-4 py-2 rounded w-full sm:w-auto disabled:opacity-60"
             onClick={() => onSave(game)}
+            disabled={compressing}
           >
             Guardar
           </button>
