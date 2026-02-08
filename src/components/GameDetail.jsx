@@ -140,7 +140,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
             className="flex-1 border px-3 py-2 rounded"
             onClick={onBack}
           >
-            ⬅ Volver
+            ⬅️ Volver
           </button>
           <button
             className="flex-1 bg-blue-600 text-white px-3 py-2 rounded"
