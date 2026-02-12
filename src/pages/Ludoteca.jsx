@@ -39,9 +39,10 @@ export default function Ludoteca({ user }) {
 
     try {
       let globalGameId = game.gameId;
-      let globalData = {};
 
-      // 🔎 Buscar si ya existe por nombre
+      /* =====================================
+         SI ES NUEVO → buscar o crear global
+      ===================================== */
       if (!globalGameId) {
         const q = query(
           collection(db, "globalGames"),
@@ -52,7 +53,6 @@ export default function Ludoteca({ user }) {
 
         if (!snap.empty) {
           globalGameId = snap.docs[0].id;
-          globalData = snap.docs[0].data();
         } else {
           const newGlobal = await addDoc(collection(db, "globalGames"), {
             name: game.name,
@@ -67,30 +67,34 @@ export default function Ludoteca({ user }) {
           });
 
           globalGameId = newGlobal.id;
-
-          globalData = {
-            name: game.name,
-            minPlayers: game.minPlayers || 0,
-            maxPlayers: game.maxPlayers || 0,
-            ageMin: game.ageMin || 0,
-            ageMax: game.ageMax || 0,
-            durationMin: game.durationMin || 0,
-            durationMax: game.durationMax || 0,
-            image: game.image || "",
-          };
         }
       }
 
-      // 🔥 Guardamos TODO en userGames (DESNORMALIZADO)
+      /* =====================================
+         SIEMPRE guardamos TODOS los campos
+         en userGames (desnormalizado)
+      ===================================== */
       await setDoc(
         doc(db, "userGames", game.id || globalGameId),
         {
           userId: user.uid,
           gameId: globalGameId,
-          ...globalData,
+
+          // 🔥 CAMPOS GLOBALES COPIADOS
+          name: game.name || "",
+          minPlayers: game.minPlayers || 0,
+          maxPlayers: game.maxPlayers || 0,
+          ageMin: game.ageMin || 0,
+          ageMax: game.ageMax || 0,
+          durationMin: game.durationMin || 0,
+          durationMax: game.durationMax || 0,
+          image: game.image || "",
+
+          // 🔹 CAMPOS SOLO USUARIO
           comments: game.comments || "",
           publisher: game.publisher || "",
-          createdAt: Date.now(),
+
+          updatedAt: Date.now(),
         },
         { merge: true }
       );
@@ -131,11 +135,7 @@ export default function Ludoteca({ user }) {
      VISTA ADMIN
   ===================== */
   if (view === "admin" && isAdmin) {
-    return (
-      <AdminGlobalGames
-        onBack={() => setView("list")}
-      />
-    );
+    return <AdminGlobalGames onBack={() => setView("list")} />;
   }
 
   if (view === "stats")

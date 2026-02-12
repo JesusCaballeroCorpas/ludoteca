@@ -151,13 +151,15 @@ export default function GameList({
               🔍
             </button>
 
-            <button
-              className="border px-3 py-2 rounded"
-              onClick={onStats}
-              title="Estadísticas"
-            >
-              📊
-            </button>
+            {onStats && (
+              <button
+                className="border px-3 py-2 rounded"
+                onClick={onStats}
+                title="Estadísticas"
+              >
+                📊
+              </button>
+            )}
 
             <button
               className="border px-3 py-2 rounded"
@@ -168,12 +170,15 @@ export default function GameList({
                 : "🗂"}
             </button>
 
-            <button
-              className="bg-blue-600 text-white px-3 py-2 rounded"
-              onClick={onCreate}
-            >
-              ➕
-            </button>
+            {onCreate && (
+              <button
+                className="bg-blue-600 text-white px-3 py-2 rounded"
+                onClick={onCreate}
+              >
+                ➕
+              </button>
+            )}
+
           </div>
         </div>
 
