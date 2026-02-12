@@ -8,29 +8,31 @@ import {
   setDoc,
   query,
   where,
-  updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
 import useUserGames from "../hooks/useUserGames";
+import useUserRole from "../hooks/useUserRole";
 
 import GameList from "../components/GameList";
 import GameForm from "../components/GameForm";
 import GameDetail from "../components/GameDetail";
 import StatsGames from "../components/StatsGames";
+import AdminGlobalGames from "../components/AdminGlobalGames";
 
 export default function Ludoteca({ user }) {
   const { userGames: games, loading } = useUserGames(user.uid);
+  const { role, loadingRole } = useUserRole(user);
 
   const [view, setView] = useState("list");
   const [viewMode, setViewMode] = useState("cards");
   const [selectedGame, setSelectedGame] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const isAdmin = user.email === "jesuscaba84@gmail.com";
+  const isAdmin = role === "admin";
 
   /* =====================
-     GUARDAR JUEGO
+     GUARDAR JUEGO (SIEMPRE USERGAMES)
   ===================== */
   async function saveGame(game) {
     setSaving(true);
@@ -79,31 +81,6 @@ export default function Ludoteca({ user }) {
         }
       }
 
-      // 🔁 Si admin y edita global
-      if (isAdmin && game.gameId) {
-        await updateDoc(doc(db, "globalGames", game.gameId), {
-          name: game.name,
-          minPlayers: game.minPlayers,
-          maxPlayers: game.maxPlayers,
-          ageMin: game.ageMin,
-          ageMax: game.ageMax,
-          durationMin: game.durationMin,
-          durationMax: game.durationMax,
-          image: game.image,
-        });
-
-        globalData = {
-          name: game.name,
-          minPlayers: game.minPlayers,
-          maxPlayers: game.maxPlayers,
-          ageMin: game.ageMin,
-          ageMax: game.ageMax,
-          durationMin: game.durationMin,
-          durationMax: game.durationMax,
-          image: game.image,
-        };
-      }
-
       // 🔥 Guardamos TODO en userGames (DESNORMALIZADO)
       await setDoc(
         doc(db, "userGames", game.id || globalGameId),
@@ -119,11 +96,12 @@ export default function Ludoteca({ user }) {
       );
 
       setView("list");
+    } catch (error) {
+      console.error("Error guardando juego:", error);
     } finally {
       setSaving(false);
     }
   }
-
 
   /* =====================
      ELIMINAR DE TU LUDOTECA
@@ -140,12 +118,23 @@ export default function Ludoteca({ user }) {
     }
   }
 
-  if (loading || saving) {
+  if (loading || loadingRole || saving) {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
         <span className="text-sm text-gray-600">🎲 Cargando juegos…</span>
       </div>
+    );
+  }
+
+  /* =====================
+     VISTA ADMIN
+  ===================== */
+  if (view === "admin" && isAdmin) {
+    return (
+      <AdminGlobalGames
+        onBack={() => setView("list")}
+      />
     );
   }
 
@@ -187,18 +176,31 @@ export default function Ludoteca({ user }) {
     );
 
   return (
-    <GameList
-      games={games}
-      viewMode={viewMode}
-      onToggleView={() =>
-        setViewMode((v) => (v === "cards" ? "list" : "cards"))
-      }
-      onCreate={() => setView("create")}
-      onStats={() => setView("stats")}
-      onOpen={(g) => {
-        setSelectedGame(g);
-        setView("detail");
-      }}
-    />
+    <>
+      {isAdmin && (
+        <div className="max-w-4xl mx-auto mt-4 text-right">
+          <button
+            onClick={() => setView("admin")}
+            className="bg-gray-800 text-white px-4 py-2 rounded"
+          >
+            ⚙ Panel Admin
+          </button>
+        </div>
+      )}
+
+      <GameList
+        games={games}
+        viewMode={viewMode}
+        onToggleView={() =>
+          setViewMode((v) => (v === "cards" ? "list" : "cards"))
+        }
+        onCreate={() => setView("create")}
+        onStats={() => setView("stats")}
+        onOpen={(g) => {
+          setSelectedGame(g);
+          setView("detail");
+        }}
+      />
+    </>
   );
 }
