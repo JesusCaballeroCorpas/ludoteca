@@ -25,7 +25,13 @@ function formatAge(min, max) {
   return "";
 }
 
-export default function GameDetail({ game, onBack, onEdit, onDelete }) {
+export default function GameDetail({
+  game,
+  user,
+  onBack,
+  onEdit,
+  onDelete,
+}) {
   const [matches, setMatches] = useState([]);
   const [view, setView] = useState("detail");
   const [editingMatch, setEditingMatch] = useState(null);
@@ -33,9 +39,11 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
   const [confirmingGame, setConfirmingGame] = useState(false);
 
   const loadMatches = useCallback(async () => {
-    const data = await getMatchesByGame(game.id, game.userId);
+    if (!game?.id || !user?.uid) return;
+
+    const data = await getMatchesByGame(game.id, user.uid);
     setMatches(data);
-  }, [game.id, game.userId]);
+  }, [game?.id, user?.uid]);
 
   useEffect(() => {
     loadMatches();
@@ -46,7 +54,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
       await updateMatch(editingMatch.id, match);
       setEditingMatch(null);
     } else {
-      await addMatch(match, game.id, game.userId);
+      await addMatch(match, game.id, user.uid);
     }
     setView("detail");
     loadMatches();
@@ -56,7 +64,7 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
     return (
       <MatchForm
         gameId={game.id}
-        userId={game.userId}
+        userId={user.uid}
         initialData={editingMatch}
         onSave={saveMatch}
         onCancel={() => {
@@ -69,10 +77,8 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
 
   return (
     <div className="relative w-full max-w-3xl mx-auto px-4 pb-28 md:pb-4">
-      {/* Header */}
       <h1 className="text-2xl font-bold mb-4">{game.name}</h1>
 
-      {/* Info principal */}
       <div className="flex flex-col md:flex-row gap-4 mb-6 w-full">
         {game.image && (
           <img
@@ -89,13 +95,11 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* Info extra */}
       <p className="text-sm mb-2">Editorial: {game.publisher}</p>
       <p className="mb-6 whitespace-pre-wrap">{game.comments}</p>
 
       <hr className="my-6" />
 
-      {/* Partidas */}
       <button
         className="bg-green-600 text-white px-3 py-2 rounded mb-4"
         onClick={() => setView("create-match")}
@@ -114,7 +118,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         onDelete={(matchId) => setConfirmingMatchId(matchId)}
       />
 
-      {/* Botones escritorio */}
       <div className="hidden md:flex gap-2 mt-6">
         <button className="border px-4 py-2 rounded" onClick={onBack}>
           ⬅ Volver
@@ -133,7 +136,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </button>
       </div>
 
-      {/* Barra fija inferior (solo móvil) */}
       <div className="fixed bottom-0 left-0 right-0 md:hidden bg-white border-t p-3 z-30">
         <div className="flex gap-2">
           <button
@@ -157,7 +159,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </div>
       </div>
 
-      {/* Modal eliminar partida */}
       {confirmingMatchId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">
@@ -184,7 +185,6 @@ export default function GameDetail({ game, onBack, onEdit, onDelete }) {
         </div>
       )}
 
-      {/* Modal eliminar juego */}
       {confirmingGame && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-sm w-full">

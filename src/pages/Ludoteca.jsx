@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  getUserGames,
-  addGame,
-  updateGame,
-  deleteGame,
-} from "../services/gamesService";
+  doc,
+  deleteDoc,
+  collection,
+  addDoc,
+  getDocs,
+  setDoc,
+  query,
+  where,
+  updateDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
+
+import useUserGames from "../hooks/useUserGames";
 
 import GameList from "../components/GameList";
 import GameForm from "../components/GameForm";
@@ -12,56 +20,127 @@ import GameDetail from "../components/GameDetail";
 import StatsGames from "../components/StatsGames";
 
 export default function Ludoteca({ user }) {
-  const [games, setGames] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { userGames: games, loading } = useUserGames(user.uid);
+
   const [view, setView] = useState("list");
   const [viewMode, setViewMode] = useState("cards");
   const [selectedGame, setSelectedGame] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadGames(); // eslint-disable-next-line
-  }, []);
-
-  async function loadGames() {
-    setLoading(true);
-    try {
-      const data = await getUserGames(user.uid);
-      setGames(data);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function saveGame(game) {
-    setLoading(true);
-    try {
-      if (game.id) {
-        await updateGame(game.id, game);
-      } else {
-        await addGame(game, user.uid);
-      }
-      await loadGames();
-      setView("list");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function removeGame(id) {
-    setLoading(true);
-    try {
-      await deleteGame(id);
-      await loadGames();
-      setView("list");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const isAdmin = user.email === "jesuscaba84@gmail.com";
 
   /* =====================
-     Loader bloqueante
+     GUARDAR JUEGO
   ===================== */
-  if (loading) {
+  async function saveGame(game) {
+    setSaving(true);
+
+    try {
+      let globalGameId = game.gameId;
+      let globalData = {};
+
+      // 🔎 Buscar si ya existe por nombre
+      if (!globalGameId) {
+        const q = query(
+          collection(db, "globalGames"),
+          where("name", "==", game.name)
+        );
+
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+          globalGameId = snap.docs[0].id;
+          globalData = snap.docs[0].data();
+        } else {
+          const newGlobal = await addDoc(collection(db, "globalGames"), {
+            name: game.name,
+            minPlayers: game.minPlayers || 0,
+            maxPlayers: game.maxPlayers || 0,
+            ageMin: game.ageMin || 0,
+            ageMax: game.ageMax || 0,
+            durationMin: game.durationMin || 0,
+            durationMax: game.durationMax || 0,
+            image: game.image || "",
+            createdAt: Date.now(),
+          });
+
+          globalGameId = newGlobal.id;
+
+          globalData = {
+            name: game.name,
+            minPlayers: game.minPlayers || 0,
+            maxPlayers: game.maxPlayers || 0,
+            ageMin: game.ageMin || 0,
+            ageMax: game.ageMax || 0,
+            durationMin: game.durationMin || 0,
+            durationMax: game.durationMax || 0,
+            image: game.image || "",
+          };
+        }
+      }
+
+      // 🔁 Si admin y edita global
+      if (isAdmin && game.gameId) {
+        await updateDoc(doc(db, "globalGames", game.gameId), {
+          name: game.name,
+          minPlayers: game.minPlayers,
+          maxPlayers: game.maxPlayers,
+          ageMin: game.ageMin,
+          ageMax: game.ageMax,
+          durationMin: game.durationMin,
+          durationMax: game.durationMax,
+          image: game.image,
+        });
+
+        globalData = {
+          name: game.name,
+          minPlayers: game.minPlayers,
+          maxPlayers: game.maxPlayers,
+          ageMin: game.ageMin,
+          ageMax: game.ageMax,
+          durationMin: game.durationMin,
+          durationMax: game.durationMax,
+          image: game.image,
+        };
+      }
+
+      // 🔥 Guardamos TODO en userGames (DESNORMALIZADO)
+      await setDoc(
+        doc(db, "userGames", game.id || globalGameId),
+        {
+          userId: user.uid,
+          gameId: globalGameId,
+          ...globalData,
+          comments: game.comments || "",
+          publisher: game.publisher || "",
+          createdAt: Date.now(),
+        },
+        { merge: true }
+      );
+
+      setView("list");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
+  /* =====================
+     ELIMINAR DE TU LUDOTECA
+  ===================== */
+  async function removeGame(userGameDocId) {
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, "userGames", userGameDocId));
+      setView("list");
+    } catch (error) {
+      console.error("Error eliminando juego:", error);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading || saving) {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mb-4"></div>
@@ -70,10 +149,7 @@ export default function Ludoteca({ user }) {
     );
   }
 
-  /* =====================
-     Vistas
-  ===================== */
-  if (view === "stats") {
+  if (view === "stats")
     return (
       <StatsGames
         user={user}
@@ -81,10 +157,14 @@ export default function Ludoteca({ user }) {
         onBack={() => setView("list")}
       />
     );
-  }
 
   if (view === "create")
-    return <GameForm onSave={saveGame} onCancel={() => setView("list")} />;
+    return (
+      <GameForm
+        onSave={saveGame}
+        onCancel={() => setView("list")}
+      />
+    );
 
   if (view === "edit" && selectedGame)
     return (
@@ -99,6 +179,7 @@ export default function Ludoteca({ user }) {
     return (
       <GameDetail
         game={selectedGame}
+        user={user}
         onBack={() => setView("list")}
         onEdit={() => setView("edit")}
         onDelete={(id) => removeGame(id)}
