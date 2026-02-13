@@ -109,7 +109,7 @@ export default function AdminGlobalGames({ onBack }) {
           ⬅️ Volver a mi ludoteca 
         </button>
 
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold ml-2">
           Panel Admin · Juegos Globales
         </h2>
       </div>
