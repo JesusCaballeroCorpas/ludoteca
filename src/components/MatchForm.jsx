@@ -14,11 +14,22 @@ export default function MatchForm({
       ? new Date(initialData.date).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10)
   );
+
   const [notes, setNotes] = useState(initialData?.notes || "");
 
   /* ---------- Jugadores ---------- */
   const [allPlayers, setAllPlayers] = useState([]);
-  const [players, setPlayers] = useState(initialData?.players || []);
+
+  // 🔥 Normalizamos scores al cargar edición
+  const [players, setPlayers] = useState(
+    initialData?.players
+      ? initialData.players.map(p => ({
+          ...p,
+          score: p.score ?? "", // si es undefined lo convertimos a ""
+        }))
+      : []
+  );
+
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
   const [addingNewPlayer, setAddingNewPlayer] = useState(false);
@@ -95,20 +106,38 @@ export default function MatchForm({
 
   /* ---------- Guardar ---------- */
   function handleSubmit(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
+
+    if (players.length === 0) {
+      alert("Añade al menos un jugador");
+      return;
+    }
+
+    const cleanedPlayers = players.map(p => {
+      const basePlayer = {
+        playerId: p.playerId,
+        name: p.name,
+        winner: p.winner || false,
+      };
+
+      // Solo añadimos score si existe realmente
+      if (p.score !== "" && p.score !== null) {
+        basePlayer.score = Number(p.score);
+      }
+
+      return basePlayer;
+    });
 
     onSave({
       gameId,
       userId,
       date,
       notes,
-      players: players.map(p => ({
-        ...p,
-        score: p.score === "" ? undefined : Number(p.score),
-      })),
+      players: cleanedPlayers,
       createdAt: initialData?.createdAt || Date.now(),
     });
   }
+
 
   return (
     <>
@@ -213,8 +242,8 @@ export default function MatchForm({
 
               <input
                 type="number"
-                placeholder="Puntos"
-                className="border p-2 rounded w-24"
+                placeholder="Puntos (opcional)"
+                className="border p-2 rounded w-28"
                 value={p.score}
                 onChange={e => updatePlayer(i, "score", e.target.value)}
               />
@@ -251,7 +280,7 @@ export default function MatchForm({
         </div>
       </form>
 
-      {/* Barra fija móvil (estilo GameDetail) */}
+      {/* Barra fija móvil */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t">
         <div className="flex justify-center gap-2 p-3">
           <button
