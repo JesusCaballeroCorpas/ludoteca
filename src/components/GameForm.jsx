@@ -45,7 +45,12 @@ function compressImage(file, maxSize = 300, quality = 0.5) {
 /* =====================
    GameForm
 ===================== */
-export default function GameForm({ initialGame, onSave, onCancel }) {
+export default function GameForm({
+  initialGame,
+  onSave,
+  onCancel,
+  isAdminGlobalEdit = false,
+}) {
   const isEditMode = !!initialGame;
 
   const [game, setGame] = useState(
@@ -60,21 +65,22 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
       publisher: "",
       image: "",
       comments: "",
-      globalGameId: null, // 🔥 nuevo campo
+      gameId: null, // 🔥 ESTE ES EL VÍNCULO REAL
     }
   );
 
   const [compressing, setCompressing] = useState(false);
 
-  // 🔥 BUSCADOR
+  /* =====================
+     GLOBAL GAMES
+  ===================== */
+
   const [allGlobalGames, setAllGlobalGames] = useState([]);
   const [search, setSearch] = useState("");
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
-    if (!isEditMode) {
-      loadGlobalGames();
-    }
+    loadGlobalGames();
   }, []);
 
   async function loadGlobalGames() {
@@ -96,42 +102,82 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
   const selectGlobalGame = (g) => {
     setGame({
       ...g,
-      globalGameId: g.id,
+      gameId: g.id, // 🔥 Guardamos referencia correcta
     });
     setSearch(g.name);
     setShowResults(false);
   };
 
+  /* =====================
+     ACTUALIZAR DESDE GLOBAL
+     (solo copia datos en userGames)
+  ===================== */
+
+  const handleRestoreGlobal = () => {
+    if (!game.gameId) return;
+
+    const global = allGlobalGames.find(
+      (g) => g.id === game.gameId
+    );
+
+    if (!global) return;
+
+    setGame((prev) => ({
+      ...prev,
+
+      // 🔥 Copiamos SOLO datos globales
+      name: global.name || "",
+      minPlayers: global.minPlayers || 0,
+      maxPlayers: global.maxPlayers || 0,
+      ageMin: global.ageMin || 0,
+      ageMax: global.ageMax || 0,
+      durationMin: global.durationMin || 0,
+      durationMax: global.durationMax || 0,
+      image: global.image || "",
+
+      // 🔹 mantenemos datos del usuario
+      comments: prev.comments,
+      publisher: prev.publisher,
+      gameId: prev.gameId,
+    }));
+  };
+
+  /* =====================
+     GUARDAR
+  ===================== */
+
   const handleSave = async () => {
-  if (!game.name.trim()) {
-    alert("El nombre es obligatorio");
-    return;
-  }
+    if (!game.name.trim()) {
+      alert("El nombre es obligatorio");
+      return;
+    }
 
-  let finalGame = { ...game };
+    let finalGame = { ...game };
 
-  // 🔥 SOLO gestionar globalGame en modo ALTA
-  if (!isEditMode) {
+    // 🔥 Solo gestionar globalGame en modo ALTA normal
+    if (!isEditMode && !isAdminGlobalEdit) {
+      if (!game.gameId) {
+        const existing = allGlobalGames.find(
+          (g) =>
+            g.name.toLowerCase().trim() ===
+            game.name.toLowerCase().trim()
+        );
 
-    if (!game.globalGameId) {
-      const existing = allGlobalGames.find(
-        (g) =>
-          g.name.toLowerCase().trim() ===
-          game.name.toLowerCase().trim()
-      );
-
-      if (existing) {
-        finalGame.globalGameId = existing.id;
-      } else {
-        const created = await createGlobalGame(game);
-        finalGame.globalGameId = created.id;
+        if (existing) {
+          finalGame.gameId = existing.id;
+        } else {
+          const created = await createGlobalGame(game);
+          finalGame.gameId = created.id;
+        }
       }
     }
-  }
 
-  onSave(finalGame);
-};
+    onSave(finalGame);
+  };
 
+  /* =====================
+     RENDER
+  ===================== */
 
   return (
     <div className="p-4 max-w-2xl mx-auto">
@@ -141,8 +187,8 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
 
       <div className="flex flex-col gap-4">
 
-        {/* 🔥 BUSCADOR SOLO EN ALTA */}
-        {!isEditMode && (
+        {/* BUSCADOR SOLO EN ALTA */}
+        {!isEditMode && !isAdminGlobalEdit && (
           <div className="relative">
             <label className="text-sm font-medium">
               Buscar juego existente
@@ -173,9 +219,16 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
           </div>
         )}
 
-        {/* =====================
-            FORMULARIO ORIGINAL
-           ===================== */}
+        {/* 🔥 BOTÓN SOLO EN EDICIÓN DE LUDOTECA */}
+        {isEditMode && game.gameId && !isAdminGlobalEdit && (
+          <button
+            type="button"
+            onClick={handleRestoreGlobal}
+            className="bg-yellow-500 text-white px-4 py-2 rounded"
+          >
+            Actualizar con datos globales
+          </button>
+        )}
 
         {/* Nombre */}
         <div>
@@ -197,38 +250,30 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
             Número de jugadores
           </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Mínimo
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.minPlayers}
-                onChange={(e) =>
-                  update(
-                    "minPlayers",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Máximo
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.maxPlayers}
-                onChange={(e) =>
-                  update(
-                    "maxPlayers",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.minPlayers}
+              onChange={(e) =>
+                update(
+                  "minPlayers",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Mínimo"
+            />
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.maxPlayers}
+              onChange={(e) =>
+                update(
+                  "maxPlayers",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Máximo"
+            />
           </div>
         </div>
 
@@ -238,38 +283,30 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
             Duración (minutos)
           </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Mínima
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.durationMin}
-                onChange={(e) =>
-                  update(
-                    "durationMin",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Máxima
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.durationMax}
-                onChange={(e) =>
-                  update(
-                    "durationMax",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.durationMin}
+              onChange={(e) =>
+                update(
+                  "durationMin",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Mínima"
+            />
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.durationMax}
+              onChange={(e) =>
+                update(
+                  "durationMax",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Máxima"
+            />
           </div>
         </div>
 
@@ -279,38 +316,30 @@ export default function GameForm({ initialGame, onSave, onCancel }) {
             Edad recomendada
           </label>
           <div className="flex flex-col md:flex-row gap-2 mt-1">
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Mínima
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.ageMin}
-                onChange={(e) =>
-                  update(
-                    "ageMin",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
-            <div className="flex-1 flex flex-col">
-              <span className="text-xs text-gray-600 mb-1">
-                Máxima
-              </span>
-              <input
-                type="number"
-                className="border p-2 rounded w-full"
-                value={game.ageMax}
-                onChange={(e) =>
-                  update(
-                    "ageMax",
-                    e.target.value ? Number(e.target.value) : ""
-                  )
-                }
-              />
-            </div>
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.ageMin}
+              onChange={(e) =>
+                update(
+                  "ageMin",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Mínima"
+            />
+            <input
+              type="number"
+              className="border p-2 rounded w-full"
+              value={game.ageMax}
+              onChange={(e) =>
+                update(
+                  "ageMax",
+                  e.target.value ? Number(e.target.value) : ""
+                )
+              }
+              placeholder="Máxima"
+            />
           </div>
         </div>
 
