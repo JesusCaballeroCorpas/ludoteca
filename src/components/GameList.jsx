@@ -302,31 +302,30 @@ export default function GameList({
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((g) => (
+                {sorted.map((g, index) => (
                   <tr
                     key={g.id}
-                    className="border-b cursor-pointer"
-                    onClick={() =>
-                      onOpen(g)
-                    }
+                    className={`cursor-pointer border-b transition-colors
+                      ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      hover:bg-blue-50`}
+                    onClick={() => onOpen(g)}
                   >
-                    <td>
-                      {safeString(g.name) ||
-                        "Sin nombre"}
+                    <td className="px-2 py-2">
+                      {safeString(g.name) || "Sin nombre"}
                     </td>
-                    <td className="text-center">
+                    <td className="text-center px-2 py-2">
                       {formatPlayers(
                         g.minPlayers,
                         g.maxPlayers
                       )}
                     </td>
-                    <td className="text-center">
+                    <td className="text-center px-2 py-2">
                       {formatAge(
                         g.ageMin,
                         g.ageMax
                       )}
                     </td>
-                    <td className="text-center">
+                    <td className="text-center px-2 py-2">
                       {formatDuration(
                         g.durationMin,
                         g.durationMax
