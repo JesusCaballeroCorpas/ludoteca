@@ -65,7 +65,7 @@ export default function GameForm({
       publisher: "",
       image: "",
       comments: "",
-      gameId: null, // 🔥 ESTE ES EL VÍNCULO REAL
+      gameId: null,
     }
   );
 
@@ -102,15 +102,18 @@ export default function GameForm({
   const selectGlobalGame = (g) => {
     setGame({
       ...g,
-      gameId: g.id, // 🔥 Guardamos referencia correcta
+      gameId: g.id,
     });
     setSearch(g.name);
     setShowResults(false);
   };
 
+  /* 🔥 NUEVO: Saber si está vinculado */
+  const isLinkedToGlobal =
+    !isAdminGlobalEdit && !isEditMode && !!game.gameId;
+
   /* =====================
-     ACTUALIZAR DESDE GLOBAL
-     (solo copia datos en userGames)
+     RESTAURAR DESDE GLOBAL
   ===================== */
 
   const handleRestoreGlobal = () => {
@@ -124,8 +127,6 @@ export default function GameForm({
 
     setGame((prev) => ({
       ...prev,
-
-      // 🔥 Copiamos SOLO datos globales
       name: global.name || "",
       minPlayers: global.minPlayers || 0,
       maxPlayers: global.maxPlayers || 0,
@@ -134,8 +135,6 @@ export default function GameForm({
       durationMin: global.durationMin || 0,
       durationMax: global.durationMax || 0,
       image: global.image || "",
-
-      // 🔹 mantenemos datos del usuario
       comments: prev.comments,
       publisher: prev.publisher,
       gameId: prev.gameId,
@@ -154,7 +153,6 @@ export default function GameForm({
 
     let finalGame = { ...game };
 
-    // 🔥 Solo gestionar globalGame en modo ALTA normal
     if (!isEditMode && !isAdminGlobalEdit) {
       if (!game.gameId) {
         const existing = allGlobalGames.find(
@@ -197,8 +195,17 @@ export default function GameForm({
               className="border p-2 rounded w-full mt-1"
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
+                const value = e.target.value;
+                setSearch(value);
                 setShowResults(true);
+
+                // 🔥 Si modifica manualmente el texto, se desvincula
+                if (value !== game.name) {
+                  setGame((prev) => ({
+                    ...prev,
+                    gameId: null,
+                  }));
+                }
               }}
               placeholder="Escribe para buscar..."
             />
@@ -219,7 +226,7 @@ export default function GameForm({
           </div>
         )}
 
-        {/* 🔥 BOTÓN SOLO EN EDICIÓN DE LUDOTECA */}
+        {/* BOTÓN RESTAURAR */}
         {isEditMode && game.gameId && !isAdminGlobalEdit && (
           <button
             type="button"
@@ -236,8 +243,13 @@ export default function GameForm({
             Nombre del juego
           </label>
           <input
-            className="border p-2 rounded w-full mt-1"
+            className={`border p-2 rounded w-full mt-1 ${
+              isLinkedToGlobal
+                ? "bg-gray-100 text-gray-600 cursor-not-allowed"
+                : ""
+            }`}
             value={game.name}
+            readOnly={isLinkedToGlobal}
             onChange={(e) =>
               update("name", e.target.value)
             }
