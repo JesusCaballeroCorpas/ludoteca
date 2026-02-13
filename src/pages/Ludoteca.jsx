@@ -5,9 +5,9 @@ import {
   collection,
   addDoc,
   getDocs,
-  setDoc,
   query,
   where,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -32,7 +32,7 @@ export default function Ludoteca({ user }) {
   const isAdmin = role === "admin";
 
   /* =====================
-     GUARDAR JUEGO (SIEMPRE USERGAMES)
+     GUARDAR JUEGO
   ===================== */
   async function saveGame(game) {
     setSaving(true);
@@ -41,7 +41,7 @@ export default function Ludoteca({ user }) {
       let globalGameId = game.gameId;
 
       /* =====================================
-         SI ES NUEVO → buscar o crear global
+         SI NO HAY GLOBAL → buscar o crear
       ===================================== */
       if (!globalGameId) {
         const q = query(
@@ -71,16 +71,18 @@ export default function Ludoteca({ user }) {
       }
 
       /* =====================================
-         SIEMPRE guardamos TODOS los campos
-         en userGames (desnormalizado)
+         🔒 SOLO EDITAR SI EL DOCUMENTO
+         PERTENECE AL USUARIO ACTUAL
       ===================================== */
-      await setDoc(
-        doc(db, "userGames", game.id || globalGameId),
-        {
-          userId: user.uid,
+      const userOwnsThisDoc =
+        game.id && games.some((g) => g.id === game.id);
+
+      if (userOwnsThisDoc) {
+        const ref = doc(db, "userGames", game.id);
+
+        await updateDoc(ref, {
           gameId: globalGameId,
 
-          // 🔥 CAMPOS GLOBALES COPIADOS
           name: game.name || "",
           minPlayers: game.minPlayers || 0,
           maxPlayers: game.maxPlayers || 0,
@@ -90,14 +92,36 @@ export default function Ludoteca({ user }) {
           durationMax: game.durationMax || 0,
           image: game.image || "",
 
-          // 🔹 CAMPOS SOLO USUARIO
           comments: game.comments || "",
           publisher: game.publisher || "",
 
           updatedAt: Date.now(),
-        },
-        { merge: true }
-      );
+        });
+      }
+
+      /* =====================================
+         ➕ SI NO ES SUYO → CREAR NUEVO
+      ===================================== */
+      else {
+        await addDoc(collection(db, "userGames"), {
+          userId: user.uid,
+          gameId: globalGameId,
+
+          name: game.name || "",
+          minPlayers: game.minPlayers || 0,
+          maxPlayers: game.maxPlayers || 0,
+          ageMin: game.ageMin || 0,
+          ageMax: game.ageMax || 0,
+          durationMin: game.durationMin || 0,
+          durationMax: game.durationMax || 0,
+          image: game.image || "",
+
+          comments: game.comments || "",
+          publisher: game.publisher || "",
+
+          createdAt: Date.now(),
+        });
+      }
 
       setView("list");
     } catch (error) {
@@ -131,9 +155,6 @@ export default function Ludoteca({ user }) {
     );
   }
 
-  /* =====================
-     VISTA ADMIN
-  ===================== */
   if (view === "admin" && isAdmin) {
     return <AdminGlobalGames onBack={() => setView("list")} />;
   }
